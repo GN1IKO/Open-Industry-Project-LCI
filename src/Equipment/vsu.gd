@@ -6,8 +6,8 @@ extends Node3D
 ## infeed conveyor) stays put; the NOSE (front) tilts DOWN or UP to discharge a parcel to a
 ## lower or a higher conveyor. The belt carries the parcel along. Driven manually or by PLC.
 ##
-## Knobs if the pivot looks wrong on your build: flip the hinge end with [member flip_hinge];
-## set the discharge angles with [member tilt_up_deg] / [member tilt_down_deg].
+## Knobs if the pivot looks wrong on your build: set the discharge angles with
+## [member tilt_up_deg] / [member tilt_down_deg].
 ##
 ## PLC: lift (BOOL) → nose UP, lower (BOOL) → nose DOWN, run (BOOL) → belt, lift_state (BOOL write,
 ## TRUE while tilted). Nodes: VSU_Frame (collision) / VSU_LiftConveyor (the pivoting belt).
@@ -29,12 +29,6 @@ enum LiftPos { DOWN, UP }
 @export_range(0.0, 60.0, 0.5, "suffix:deg") var tilt_down_deg: float = 22.0
 ## Tilt speed, degrees per second.
 @export_range(2.0, 180.0, 1.0, "suffix:deg/s") var tilt_speed: float = 35.0
-## Manual override only — the fixed hinge end is auto-detected (the physically LOWER
-## end stays put, the raised nose swings). Tick this only if you ever need to swap.
-@export var flip_hinge: bool = false:
-	set(value):
-		flip_hinge = value
-		_cached = false
 
 @export_group("Belt")
 ## Run the belt (carries parcels along the conveyor).
@@ -205,10 +199,8 @@ func _cache() -> void:
 		_tilt_axis_local = Vector3(1, 0, 0)
 	# Auto-detect which flow-end is physically LOWER — that end is the fixed hinge,
 	# the raised end is the moving nose. Geometry-driven, so it cannot be fooled by
-	# axis/orientation guesses. flip_hinge manually swaps it if ever needed.
+	# axis/orientation guesses.
 	var hinge_at_max: bool = _lower_end_is_max(aabb, fa)
-	if flip_hinge:
-		hinge_at_max = not hinge_at_max
 	var hinge_flow: float = aabb.end[fa] if hinge_at_max else aabb.position[fa]
 	if flow_x:
 		_hinge_local = Vector3(hinge_flow, aabb.position.y, aabb.get_center().z)
