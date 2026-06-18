@@ -935,7 +935,7 @@ func _update_conveyor_velocity() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	if LegFooting.legs_poll_due(self) and LegFooting.legs_state_changed(self, _legs_state):
+	if LegFooting.legs_state_changed(self, _legs_state):
 		_rebuild_legs()
 		_legs_state = LegFooting.capture_leg_state(self)
 

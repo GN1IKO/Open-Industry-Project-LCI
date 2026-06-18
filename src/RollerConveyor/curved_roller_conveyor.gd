@@ -562,20 +562,11 @@ func _process(delta: float) -> void:
 		roller_material.uv1_offset = uv_offset
 
 
-# Last velocities pushed to the bodies; INF forces a re-push.
-var _applied_angular_speed: float = INF
-var _applied_speed: float = INF
-var _applied_velocity_xform: Transform3D
-
-
-func _physics_process(_delta: float) -> void:
-	if LegFooting.legs_poll_due(self) and LegFooting.legs_state_changed(self, _legs_state):
+func _physics_process(delta: float) -> void:
+	if LegFooting.legs_state_changed(self, _legs_state):
 		_rebuild_legs()
 		_legs_state = LegFooting.capture_leg_state(self)
 	if Simulation.is_running() and _sb:
-		if _angular_speed == _applied_angular_speed and speed == _applied_speed \
-				and global_transform == _applied_velocity_xform:
-			return
 		var local_up := _sb.global_transform.basis.y.normalized()
 		_sb.constant_angular_velocity = -local_up * _angular_speed
 
@@ -584,16 +575,11 @@ func _physics_process(_delta: float) -> void:
 			var end_axis: Node3D = static_body.get_parent() as Node3D
 			var velocity_dir: Vector3 = end_axis.global_transform.basis * Vector3(-1, 0, 0)
 			static_body.constant_linear_velocity = velocity_dir.normalized() * effective_speed
-		_applied_angular_speed = _angular_speed
-		_applied_speed = speed
-		_applied_velocity_xform = global_transform
-	elif _applied_angular_speed != 0.0 or _applied_speed != 0.0:
+	else:
 		if _sb:
 			_sb.constant_angular_velocity = Vector3.ZERO
 		for static_body in _end_static_bodies:
 			static_body.constant_linear_velocity = Vector3.ZERO
-		_applied_angular_speed = 0.0
-		_applied_speed = 0.0
 
 
 func _update_all_components() -> void:

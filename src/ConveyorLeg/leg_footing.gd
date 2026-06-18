@@ -31,18 +31,6 @@ static func _collect_collision_rids(node: Node, out: Array[RID]) -> void:
 		_collect_collision_rids(child, out)
 
 
-# Physics ticks between leg-state polls (120Hz tick -> 20Hz poll). Polling is
-# editor-facing (legs track drags/resizes); per-tick reflection over thousands
-# of conveyors is measurable, 50ms latency is not.
-const POLL_INTERVAL: int = 6
-
-
-## True on this instance's polling tick. Staggered by instance id so conveyors
-## don't all poll on the same tick.
-static func legs_poll_due(node: Node3D) -> bool:
-	return (Engine.get_physics_frames() + node.get_instance_id()) % POLL_INTERVAL == 0
-
-
 static func capture_leg_state(node: Node3D) -> Dictionary:
 	var s: Dictionary = {"xform": node.global_transform}
 	if &"size" in node:

@@ -506,20 +506,16 @@ func _update_speed_label() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	if LegFooting.legs_poll_due(self) and LegFooting.legs_state_changed(self, _legs_state):
+	if LegFooting.legs_state_changed(self, _legs_state):
 		_rebuild_legs()
 		_legs_state = LegFooting.capture_leg_state(self)
-	_align_cargo_to_guards()
-
-
-# Roller-surface scroll is purely visual; advance it at frame rate, not tick rate.
-func _process(delta: float) -> void:
-	if running and _roller_material and speed != 0.0:
+	if running and _roller_material:
 		var roller_speed := speed / cos(deg_to_rad(skew_angle)) if absf(skew_angle) < 89.0 else speed
 		var circumference := 2.0 * PI * _roller_radius()
 		# Multiply by tiles-per-wrap (uv1_scale.x) so the surface tracks the belt at no-slip speed.
 		var bands: float = _roller_material.uv1_scale.x
-		_roller_material.uv1_offset.x = fmod(_roller_material.uv1_offset.x + bands * roller_speed * delta / circumference, 1.0)
+		_roller_material.uv1_offset.x = fmod(_roller_material.uv1_offset.x + bands * roller_speed * _delta / circumference, 1.0)
+	_align_cargo_to_guards()
 
 
 func set_roller_override_material(material: Material) -> void:

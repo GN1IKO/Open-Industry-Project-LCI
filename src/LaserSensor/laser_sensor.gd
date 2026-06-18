@@ -112,9 +112,6 @@ func _exit_tree() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	if not Simulation.is_running():
-		_update_idle_beam()
-		return
 	_scan_tick += 1
 	if _scan_tick % 4 != 0:
 		return
@@ -151,24 +148,6 @@ func _physics_process(_delta: float) -> void:
 		_last_beam_color = beam_color
 		_last_transform = current_transform
 		_beam_needs_update = false
-
-
-# No raycast while the simulation is stopped — just keep the editor beam
-# visual tracking the sensor when it's moved.
-func _update_idle_beam() -> void:
-	var current_transform := global_transform
-	if not _beam_needs_update and current_transform == _last_transform \
-			and _last_distance == max_range and _last_beam_color == Color.GREEN:
-		return
-	var start_pos := global_position
-	var dir := current_transform.basis.z.normalized()
-	if show_beam:
-		_update_beam_mesh(start_pos, max_range, Color.GREEN)
-	SensorBeamCache.set_beam(get_instance_id(), start_pos, start_pos + dir * max_range)
-	_last_distance = max_range
-	_last_beam_color = Color.GREEN
-	_last_transform = current_transform
-	_beam_needs_update = false
 
 
 func _update_beam_mesh(start_pos: Vector3, beam_distance: float, beam_color: Color) -> void:

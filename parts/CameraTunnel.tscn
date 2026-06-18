@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://w0t7udcg7if53"]
+
+[ext_resource type="PackedScene" uid="uid://cqmt0cam1tun1" path="res://assets/3DModels/Equipment/camera_tunnel.glb" id="1_camtun"]
+[ext_resource type="Script" uid="uid://k5ot5k5uk6qtt" path="res://src/Equipment/camera_tunnel.gd" id="2_ctscr"]
+
+[node name="CameraTunnel" type="Node3D"]
+script = ExtResource("2_ctscr")
+
+[node name="camera_tunnel" parent="." instance=ExtResource("1_camtun")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 0)

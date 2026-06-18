@@ -1098,27 +1098,13 @@ func _update_speed_label() -> void:
 	_speed_label.text = _speed_label_text()
 
 
-# Last speed/placement pushed to the body; INF forces a re-push.
-var _applied_speed: float = INF
-var _applied_velocity_xform: Transform3D
-
-
-func _physics_process(_delta: float) -> void:
-	if LegFooting.legs_poll_due(self) and LegFooting.legs_state_changed(self, _legs_state):
+func _physics_process(delta: float) -> void:
+	if LegFooting.legs_state_changed(self, _legs_state):
 		_rebuild_legs()
 		_legs_state = LegFooting.capture_leg_state(self)
 	if not Simulation.is_running() or Simulation.is_paused():
 		return
-	if speed != _applied_speed or global_transform != _applied_velocity_xform:
-		BeltSurface.apply_velocity(_simple_conveyor_shape, speed)
-		_applied_speed = speed
-		_applied_velocity_xform = global_transform
-
-
-# Belt-texture scroll is purely visual; advance it at frame rate, not tick rate.
-func _process(delta: float) -> void:
-	if not Simulation.is_running() or Simulation.is_paused():
-		return
+	BeltSurface.apply_velocity(_simple_conveyor_shape, speed)
 	_belt_position = BeltSurface.advance_belt_position(
 			_belt_material, speed, delta, _belt_position)
 
@@ -1137,7 +1123,6 @@ func _on_simulation_ended() -> void:
 		_belt_material.set_shader_parameter("BeltPosition", _belt_position)
 	if is_instance_valid(_simple_conveyor_shape):
 		_simple_conveyor_shape.constant_linear_velocity = Vector3.ZERO
-	_applied_speed = INF
 
 
 # Belt isn't moving while paused, so publish running=false; resuming restores

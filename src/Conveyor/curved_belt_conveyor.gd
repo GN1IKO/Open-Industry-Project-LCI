@@ -1107,8 +1107,8 @@ func _recalculate_speeds() -> void:
 
 	_update_belt_ends()
 
-func _physics_process(_delta: float) -> void:
-	if LegFooting.legs_poll_due(self) and LegFooting.legs_state_changed(self, _legs_state):
+func _physics_process(delta: float) -> void:
+	if LegFooting.legs_state_changed(self, _legs_state):
 		_rebuild_legs()
 		_legs_state = LegFooting.capture_leg_state(self)
 	if not Simulation.is_running():
@@ -1128,14 +1128,9 @@ func _physics_process(_delta: float) -> void:
 			else:
 				body.constant_angular_velocity = Vector3.ZERO
 		_last_pushed_angular_speed = _angular_speed
-
-
-# Belt-texture scroll is purely visual; advance it at frame rate, not tick rate.
-func _process(delta: float) -> void:
-	if not Simulation.is_running() or Simulation.is_paused():
-		return
-	if _linear_speed != 0:
+	if not Simulation.is_paused():
 		_belt_position = fmod(_belt_position + _linear_speed * delta, 1.0)
+	if _linear_speed != 0:
 		(_belt_material as ShaderMaterial).set_shader_parameter("BeltPosition", _belt_position)
 
 

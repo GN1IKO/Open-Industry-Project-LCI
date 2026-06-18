@@ -73,6 +73,12 @@ extends ResizableNode3D
 ## Font size of the Label3D on each spawned box.
 @export var label_font_size: int = 64
 
+@export_group("Barcode Label")
+## Apply the standardized parcel barcode (Turbo_G5XXXXX_Z + four Data Matrix codes,
+## per the Label_Specification) to every spawned box — a fresh unique code each spawn.
+## The CameraTunnel reads it; labels clear with the boxes when the simulation stops.
+@export var barcode_labels: bool = true
+
 var _scan_interval: float = 0.0
 var _conveyor_stopped: bool = false
 var _next_spawn_time: float = 0.0
@@ -265,6 +271,9 @@ func _add_box_to_scene(box: Box, spawn_transform: Transform3D, check_transform: 
 		label.no_depth_test = true
 		box.get_node("RigidBody3D").add_child(label)
 
+	if barcode_labels:
+		_apply_barcode_label(box)
+
 	add_child(box, true)
 	box.global_transform = spawn_transform
 	if get_tree().edited_scene_root:
@@ -351,11 +360,65 @@ func use() -> void:
 	disable = not disable
 
 
+## Stamps a standardized parcel barcode on the box top and stores the code as metadata
+## (on the RigidBody3D, which is what the CameraTunnel read-gate detects).
+func _apply_barcode_label(box: Box) -> void:
+	var rb := box.get_node_or_null("RigidBody3D")
+	if rb == null:
+		return
+	var bc: Dictionary = BarcodeLabel.generate()
+	rb.set_meta("barcode_value", bc["value"])
+	rb.set_meta("barcode_string", bc["string"])
+
+	var top: float = box.size.y / 2.0 + 0.002
+	var w: float = minf(box.size.x, box.size.z) * 0.78
+	var tex: Texture2D = BarcodeLabel.make_texture(bc["value"])
+	var aspect: float = float(tex.get_height()) / float(tex.get_width())  # codes-strip h/w
+
+	# white sticker backing (codes on top, text below)
+	var sticker := MeshInstance3D.new()
+	sticker.name = "BarcodeLabel"
+	var pm := PlaneMesh.new()
+	pm.size = Vector2(w, w * (aspect + 0.34))
+	sticker.mesh = pm
+	var wm := StandardMaterial3D.new()
+	wm.albedo_color = Color(0.97, 0.97, 0.95)
+	sticker.material_override = wm
+	sticker.position = Vector3(0, top, 0)
+	rb.add_child(sticker)
+
+	# the four Data Matrix codes (kept square via the texture's true aspect)
+	var codes := MeshInstance3D.new()
+	codes.name = "BarcodeCodes"
+	var cm := PlaneMesh.new()
+	cm.size = Vector2(w * 0.92, w * 0.92 * aspect)
+	codes.mesh = cm
+	var lm := StandardMaterial3D.new()
+	lm.albedo_texture = tex
+	lm.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	codes.material_override = lm
+	codes.position = Vector3(0, top + 0.001, -w * (aspect + 0.34) * 0.22)
+	rb.add_child(codes)
+
+	# human-readable string under the codes
+	var text := Label3D.new()
+	text.name = "BarcodeText"
+	text.text = bc["string"]
+	text.font_size = 48
+	text.pixel_size = w * 0.0012
+	text.modulate = Color.BLACK
+	text.rotation_degrees = Vector3(-90, 0, 0)
+	text.position = Vector3(0, top + 0.002, w * (aspect + 0.34) * 0.28)
+	rb.add_child(text)
+
+
 func _on_simulation_started() -> void:
 	if conveyor and &"speed" not in conveyor:
 		push_warning("Conveyor reference in " + name + " does not have a speed property")
 	_clear_pending_spawn_size()
 	_label_counter = 0
+	if barcode_labels:
+		randomize()                      # fresh barcode sequence each run
 	_reset_spawn_cycle()
 
 
