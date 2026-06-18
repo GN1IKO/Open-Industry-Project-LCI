@@ -991,10 +991,6 @@ func _save_thumb_to_disk(id: int, image: Image) -> void:
 	assert(error == OK, error_string(error))
 
 func _create_thumb(item: Dictionary[StringName, Variant], callback: Callable) -> void:
-	# Headless runs never draw frames, so the frame_pre/post_draw awaits below
-	# would never resume and the worker in _thread_process would block forever.
-	if DisplayServer.get_name() == "headless":
-		return callback.call()
 	var path: String = ResourceUID.get_id_path(item.id)
 	if not is_valid_scene_file(path):
 		return callback.call()
@@ -1050,11 +1046,7 @@ func _thread_process() -> void:
 
 			# This ensures that this method will be executed in the main thread.
 			call_deferred_thread_group(&"_create_thumb", item, semaphore.post)
-			# A blocking wait() deadlocks _exit_tree's wait_to_finish() if the
-			# main thread stops drawing before _create_thumb's awaits resume
-			# (editor quit mid-thumbnail) — poll so shutdown can interrupt.
-			while _thread_work and not semaphore.try_wait():
-				OS.delay_msec(10)
+			semaphore.wait()
 
 
 
